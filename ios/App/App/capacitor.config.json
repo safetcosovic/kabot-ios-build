@@ -1,0 +1,17 @@
+{
+	"appId": "com.kabot.smash",
+	"appName": "Kabot",
+	"webDir": "dist",
+	"android": {
+		"backgroundColor": "#2a0f7a",
+		"allowMixedContent": false
+	},
+	"ios": {
+		"backgroundColor": "#2a0f7a"
+	},
+	"packageClassList": [
+		"AdMobPlugin",
+		"AppPlugin",
+		"HapticsPlugin"
+	]
+}

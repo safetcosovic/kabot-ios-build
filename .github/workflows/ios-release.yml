@@ -34,7 +34,7 @@ jobs:
           # tolerate quotes, backticks, spaces or new lines pasted around the ids
           ASC_KEY_ID=$(printf '%s' "$ASC_KEY_ID" | tr -cd 'A-Z0-9')
           # the Key ID is not a secret (useless without the .p8); fall back to the known id if the pasted one is malformed
-          [ ${#ASC_KEY_ID} -eq 10 ] || ASC_KEY_ID=XB2UD7693K
+          [ ${#ASC_KEY_ID} -eq 10 ] || ASC_KEY_ID=4UJ35AQA52
           ASC_ISSUER_ID=$(printf '%s' "$ASC_ISSUER_ID" | tr 'A-F' 'a-f' | tr -cd '0-9a-f-')
           [ ${#ASC_ISSUER_ID} -eq 36 ] || ASC_ISSUER_ID=31319e07-4ccb-43a4-9397-f6b6cacdf22a
           echo "::add-mask::$ASC_KEY_ID"; echo "::add-mask::$ASC_ISSUER_ID"

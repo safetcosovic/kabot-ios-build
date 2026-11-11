@@ -1,0 +1,39 @@
+name: Mudpup iOS build check (unsigned archive)
+
+# Every push: proves the iOS project compiles and archives with the current Xcode (no signing, no upload).
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  archive:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Xcode
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1); if [ -n "$X" ]; then sudo xcode-select -s "$X"; fi
+          xcodebuild -version | tee /tmp/xcode-version.txt
+      - name: Archive (unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" archive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            2>&1 | tee /tmp/archive.log | grep -E 'error:|ARCHIVE' | tail -40
+          grep -q 'ARCHIVE SUCCEEDED' /tmp/archive.log && echo ok > /tmp/archive-ok.txt
+          /usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$RUNNER_TEMP/App.xcarchive/Products/Applications/App.app/Info.plist" | tee /tmp/bundle-id.txt
+      - name: Publish logs to the mudpup-ios-check branch
+        if: always()
+        run: |
+          mkdir -p /tmp/out && cd /tmp/out
+          cp /tmp/*.txt . 2>/dev/null || true; tail -300 /tmp/archive.log > archive-tail.log 2>/dev/null || true
+          git init -q -b mudpup-ios-check
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A && git commit -qm "iOS check logs"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" mudpup-ios-check

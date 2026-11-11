@@ -1,0 +1,129 @@
+name: Mudpup iOS release (TestFlight upload)
+
+# Push to main (or run manually) to build a signed App Store build and upload it to App Store Connect.
+# Needs repository secret ASC_KEY_P8 (App Store Connect API key .p8). Key ID and issuer ID have built-in fallbacks.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-26
+    timeout-minutes: 75
+    env:
+      TEAM_ID: 2HAJVK6ZK8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Xcode
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1); if [ -n "$X" ]; then sudo xcode-select -s "$X"; fi
+          xcodebuild -version | tee /tmp/xcode-version.txt
+      - name: Release safety check
+        run: |
+          # no Google test ad IDs may ship in the iOS build
+          if grep -q '3940256099942544' ios/App/App/Info.plist ios/App/App/public/assets/*.js; then echo "TEST AdMob id found" | tee /tmp/fail.txt; exit 1; fi
+      - name: API key
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          # tolerate quotes, backticks, spaces or new lines pasted around the ids
+          ASC_KEY_ID=$(printf '%s' "$ASC_KEY_ID" | tr -cd 'A-Z0-9')
+          # the Key ID is not a secret (useless without the .p8); fall back to the known id if the pasted one is malformed
+          [ ${#ASC_KEY_ID} -eq 10 ] || ASC_KEY_ID=4UJ35AQA52
+          ASC_ISSUER_ID=$(printf '%s' "$ASC_ISSUER_ID" | tr 'A-F' 'a-f' | tr -cd '0-9a-f-')
+          [ ${#ASC_ISSUER_ID} -eq 36 ] || ASC_ISSUER_ID=31319e07-4ccb-43a4-9397-f6b6cacdf22a
+          echo "::add-mask::$ASC_KEY_ID"; echo "::add-mask::$ASC_ISSUER_ID"
+          echo "ASC_KEY_ID=$ASC_KEY_ID" >> "$GITHUB_ENV"; echo "ASC_ISSUER_ID=$ASC_ISSUER_ID" >> "$GITHUB_ENV"
+          if [ -z "$ASC_KEY_ID" ] || [ -z "$ASC_KEY_P8" ]; then echo "missing ASC secrets" | tee /tmp/fail.txt; exit 1; fi
+          mkdir -p "$RUNNER_TEMP/keys"
+          K="$RUNNER_TEMP/keys/AuthKey_$ASC_KEY_ID.p8"
+          # normalise what Notepad may add: BOM, CRLF, surrounding blank lines / spaces
+          printf '%s\n' "$ASC_KEY_P8" | sed $'1s/^\xEF\xBB\xBF//' | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | sed '/^$/d' > "$K"
+          if ! grep -q 'BEGIN PRIVATE KEY' "$K" || ! grep -q 'END PRIVATE KEY' "$K"; then
+            { echo "ASC_KEY_P8 is not a .p8 private key"; echo "lines=$(wc -l < "$K") chars=$(wc -c < "$K") has_begin=$(grep -c BEGIN "$K") has_end=$(grep -c END "$K")"; } | tee /tmp/fail.txt; exit 1
+          fi
+          # the body must be 4 lines of base64 between BEGIN/END for an Apple .p8
+          echo "key lines=$(wc -l < "$K")" | tee /tmp/key-shape.txt
+          openssl pkey -in "$K" -noout 2>/tmp/openssl.txt && echo "key parses ok" | tee -a /tmp/key-shape.txt || { echo "ASC_KEY_P8 does not parse as a private key" | tee /tmp/fail.txt; exit 1; }
+      - name: Check the App Store Connect API key (prints only HTTP status codes)
+        run: |
+          python3 -m pip install --quiet --break-system-packages pyjwt cryptography 2>/dev/null || python3 -m pip install --quiet pyjwt cryptography
+          python3 - <<'PY' | tee /tmp/api-check.txt
+          import os, time, jwt, urllib.request, urllib.error, re
+          kid = os.environ['ASC_KEY_ID'].strip(); iss = os.environ['ASC_ISSUER_ID'].strip()
+          print('key id shape:', bool(re.fullmatch(r'[A-Z0-9]{10}', kid)), len(kid))
+          print('issuer shape:', bool(re.fullmatch(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', iss)), len(iss))
+          key = open(os.path.join(os.environ['RUNNER_TEMP'], 'keys', 'AuthKey_%s.p8' % os.environ['ASC_KEY_ID'])).read()
+          tok = jwt.encode({'iss': iss, 'iat': int(time.time()), 'exp': int(time.time()) + 600, 'aud': 'appstoreconnect-v1'}, key, algorithm='ES256', headers={'kid': kid, 'typ': 'JWT'})
+          for path in ['/v1/apps?limit=5', '/v1/certificates?limit=5', '/v1/bundleIds?limit=5']:
+              req = urllib.request.Request('https://api.appstoreconnect.apple.com' + path, headers={'Authorization': 'Bearer ' + tok})
+              try:
+                  with urllib.request.urlopen(req) as r: print(path, r.status)
+              except urllib.error.HTTPError as e:
+                  print(path, e.code, e.read()[:300].decode('utf8', 'replace'))
+          PY
+          grep -q '/v1/apps?limit=5 200' /tmp/api-check.txt || { echo "API key rejected by Apple" | tee /tmp/fail.txt; exit 1; }
+      - name: Archive (unsigned; signed in the export step)
+        run: |
+          set -o pipefail
+          BUILD=$(( ${{ github.run_number }} + 3 ))
+          echo "build number $BUILD" | tee /tmp/build-number.txt
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/App.xcarchive" archive \
+            DEVELOPMENT_TEAM=$TEAM_ID CURRENT_PROJECT_VERSION=$BUILD \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            2>&1 | tee /tmp/archive.log | grep -E 'error:|warning: .*sign|ARCHIVE|Signing' | tail -60
+      - name: Prepare embedded frameworks for distribution signing
+        run: |
+          # the unsigned archive leaves vendor frameworks with a stale (Google) signature; strip it so
+          # the export step signs every nested binary with our distribution certificate
+          APP="$RUNNER_TEMP/App.xcarchive/Products/Applications/App.app"
+          for fw in "$APP"/Frameworks/*.framework "$APP"/Frameworks/*.dylib; do
+            [ -e "$fw" ] || continue
+            bin="$fw"; [ -d "$fw" ] && bin="$fw/$(/usr/libexec/PlistBuddy -c 'Print CFBundleExecutable' "$fw/Info.plist")"
+            codesign --remove-signature "$bin" || true
+            rm -rf "$fw/_CodeSignature"
+            echo "unsigned $(basename "$fw")"
+          done | tee /tmp/frameworks.txt
+          codesign --remove-signature "$APP/App" || true; rm -rf "$APP/_CodeSignature"
+      - name: Export + upload to App Store Connect
+        run: |
+          set -o pipefail
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          EOF
+          sed -i '' 's/^ *//' "$RUNNER_TEMP/ExportOptions.plist" && plutil -lint "$RUNNER_TEMP/ExportOptions.plist"
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/keys/AuthKey_$ASC_KEY_ID.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            2>&1 | tee /tmp/export.log | tail -40
+          grep -qiE 'Upload succeeded|EXPORT SUCCEEDED' /tmp/export.log
+          echo ok > /tmp/uploaded.txt
+      - name: Remove key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/keys"
+      - name: Publish logs to the mudpup-ios-log branch
+        if: always()
+        run: |
+          mkdir -p /tmp/out && cd /tmp/out
+          cp /tmp/*.txt /tmp/*.log . 2>/dev/null || true
+          git init -q -b mudpup-ios-log
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A && git commit -qm "iOS release logs for ${GITHUB_REF_NAME}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" mudpup-ios-log

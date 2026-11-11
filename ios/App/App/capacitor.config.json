@@ -1,0 +1,17 @@
+{
+	"appId": "com.mudpup.offroad",
+	"appName": "Mudpup",
+	"webDir": "dist",
+	"android": {
+		"backgroundColor": "#0b4f4a",
+		"allowMixedContent": false
+	},
+	"ios": {
+		"backgroundColor": "#0b4f4a"
+	},
+	"packageClassList": [
+		"AdMobPlugin",
+		"AppPlugin",
+		"HapticsPlugin"
+	]
+}

@@ -8,40 +8,18 @@ jobs:
   devices:
     runs-on: ubuntu-latest
     steps:
-      - name: List / register device via App Store Connect API
+      - uses: actions/checkout@v4
+      - name: Fill App Store listing via API
         env:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
         run: |
           pip install --quiet pyjwt cryptography
-          python3 - <<'PY' | tee /tmp/devices.txt
-          import os, re, time, json, jwt, urllib.request, urllib.error
-          kid = re.sub('[^A-Z0-9]', '', os.environ.get('ASC_KEY_ID',''))
-          if len(kid) != 10: kid = '4UJ35AQA52'
-          iss = re.sub('[^0-9a-f-]', '', os.environ.get('ASC_ISSUER_ID','').lower())
-          if len(iss) != 36: iss = '31319e07-4ccb-43a4-9397-f6b6cacdf22a'
-          key = '\n'.join(l.strip() for l in os.environ['ASC_KEY_P8'].replace('\r','').lstrip('﻿').split('\n') if l.strip())
-          tok = jwt.encode({'iss': iss, 'iat': int(time.time()), 'exp': int(time.time())+600, 'aud': 'appstoreconnect-v1'}, key, algorithm='ES256', headers={'kid': kid, 'typ': 'JWT'})
-          def call(method, path, body=None):
-              req = urllib.request.Request('https://api.appstoreconnect.apple.com'+path, method=method, headers={'Authorization':'Bearer '+tok,'Content-Type':'application/json'}, data=json.dumps(body).encode() if body else None)
-              try:
-                  with urllib.request.urlopen(req) as r: return r.status, json.loads(r.read() or b'{}')
-              except urllib.error.HTTPError as e: return e.code, e.read()[:600].decode('utf8','replace')
-          s, d = call('GET', '/v1/apps/6834303301/betaFeedbackCrashSubmissions?limit=10')
-          print('crash list', s)
-          if s == 200:
-              for x in d['data']:
-                  print(x['id'], json.dumps(x['attributes'])[:400])
-                  s2, d2 = call('GET', '/v1/betaFeedbackCrashSubmissions/%s/crashLog' % x['id'])
-                  print('crashLog', s2)
-                  if s2 == 200: open('/tmp/crash_%s.txt' % x['id'][:8], 'w').write(d2['data']['attributes'].get('logText') or json.dumps(d2)[:5000])
-                  else: print(d2)
-          else: print(d)
-          PY
+          python3 zoomble/asc_setup.py 2>&1 | tee /tmp/devices.txt
       - name: Publish log
         if: always()
         run: |
-          mkdir -p /tmp/out && cd /tmp/out && cp /tmp/devices.txt . || echo none > devices.txt; cp /tmp/crash_*.txt . 2>/dev/null || true
+          mkdir -p /tmp/out && cd /tmp/out && cp /tmp/devices.txt . || echo none > devices.txt
           git init -q -b zoomble-devices-log && git config user.name gha && git config user.email gha@users.noreply.github.com
           git add -A && git commit -qm log && git push -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" zoomble-devices-log

@@ -28,23 +28,20 @@ jobs:
               try:
                   with urllib.request.urlopen(req) as r: return r.status, json.loads(r.read() or b'{}')
               except urllib.error.HTTPError as e: return e.code, e.read()[:600].decode('utf8','replace')
-          s, d = call('GET', '/v1/devices?limit=50')
-          print('GET devices', s)
+          s, d = call('GET', '/v1/apps/6834303301/betaFeedbackCrashSubmissions?limit=10')
+          print('crash list', s)
           if s == 200:
-              for x in d['data']: a = x['attributes']; print(' ', a['name'], a['platform'], a['udid'], a['status'], a.get('deviceClass'))
-          udid = '00008160-000A55600AA0000A'
-          if s == 200 and not any(x['attributes']['udid'].upper() == udid for x in d['data']):
-              s2, d2 = call('POST', '/v1/devices', {'data': {'type': 'devices', 'attributes': {'name': 'Safet iPhone', 'platform': 'IOS', 'udid': udid}}})
-              print('POST device', s2, d2 if s2 != 201 else 'registered')
-          s3, d3 = call('GET', '/v1/bundleIds?filter[identifier]=com.zoomble.Zoomble')
-          print('bundleId lookup', s3, [x['attributes']['identifier'] for x in d3['data']] if s3 == 200 else d3)
-          if s3 == 200 and not any(x['attributes']['identifier'] == 'com.zoomble.Zoomble' for x in d3['data']):
-              s4, d4 = call('POST', '/v1/bundleIds', {'data': {'type': 'bundleIds', 'attributes': {'identifier': 'com.zoomble.Zoomble', 'name': 'ZOOMBLE', 'platform': 'IOS'}}})
-              print('POST bundleId', s4, d4 if s4 != 201 else 'registered ' + d4['data']['id'])
+              for x in d['data']:
+                  print(x['id'], json.dumps(x['attributes'])[:400])
+                  s2, d2 = call('GET', '/v1/betaFeedbackCrashSubmissions/%s/crashLog' % x['id'])
+                  print('crashLog', s2)
+                  if s2 == 200: open('/tmp/crash_%s.txt' % x['id'][:8], 'w').write(d2['data']['attributes'].get('logText') or json.dumps(d2)[:5000])
+                  else: print(d2)
+          else: print(d)
           PY
       - name: Publish log
         if: always()
         run: |
-          mkdir -p /tmp/out && cd /tmp/out && cp /tmp/devices.txt . || echo none > devices.txt
+          mkdir -p /tmp/out && cd /tmp/out && cp /tmp/devices.txt . || echo none > devices.txt; cp /tmp/crash_*.txt . 2>/dev/null || true
           git init -q -b zoomble-devices-log && git config user.name gha && git config user.email gha@users.noreply.github.com
           git add -A && git commit -qm log && git push -f "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" zoomble-devices-log

@@ -16,7 +16,7 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
         run: |
           pip install --quiet pyjwt cryptography
-          python3 zoomble/asc_setup.py 2>&1 | tee /tmp/devices.txt
+          SKIP_SHOTS=1 python3 zoomble/asc_setup.py 2>&1 | tee /tmp/devices.txt
       - name: Publish log
         if: always()
         run: |

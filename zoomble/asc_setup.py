@@ -62,10 +62,10 @@ if info:
         log('age rating fields', sorted(cur.keys()))
         want = {}
         for k, v in cur.items():
-            if isinstance(v, bool) or v is None and k in ('gambling', 'unrestrictedWebAccess', 'lootBox', 'messagingAndChat', 'userGeneratedContent', 'parentalControls', 'ageAssurance', 'healthOrWellnessTopics', 'seventeenPlus', 'advertising'):
+            if isinstance(v, bool) or v is None and k in ('gambling', 'unrestrictedWebAccess', 'lootBox', 'messagingAndChat', 'userGeneratedContent', 'parentalControls', 'ageAssurance', 'healthOrWellnessTopics', 'seventeenPlus', 'advertising', 'socialMedia', 'socialMediaAgeRestricted'):
                 want[k] = False
             elif isinstance(v, str) or v is None:
-                if k in ('kidsAgeBand', 'koreaAgeRatingOverride', 'ageRatingOverride', 'ageRatingOverrideV2', 'developerAgeRatingInfoUrl'):
+                if k in ('kidsAgeBand', 'koreaAgeRatingOverride', 'ageRatingOverride', 'ageRatingOverrideV2', 'developerAgeRatingInfoUrl', 'gracRatingClassificationNumber'):
                     continue
                 want[k] = 'NONE'
         want['violenceCartoonOrFantasy'] = 'INFREQUENT_OR_MILD'
@@ -85,7 +85,8 @@ ver = [x for x in d['data'] if x['attributes']['appStoreState'] in ('PREPARE_FOR
 log('version', s, ver and (ver['attributes']['versionString'], ver['attributes']['appStoreState']))
 vid = ver and ver['id']
 if vid:
-    s, d = call('GET', f'/v1/apps/{APP}/builds?sort=-uploadedDate&limit=5')
+    s, d = call('GET', f'/v1/builds?filter[app]={APP}&sort=-uploadedDate&limit=5')
+    if s != 200: log('builds', s, d)
     build = None
     for b in (d['data'] if s == 200 else []):
         log('build', b['attributes']['version'], b['attributes']['processingState'])
@@ -105,7 +106,7 @@ if vid:
         # screenshots
         s3, d3 = call('GET', f'/v1/appStoreVersionLocalizations/{lid}/appScreenshotSets')
         sets = {x['attributes']['screenshotDisplayType']: x['id'] for x in (d3['data'] if s3 == 200 else [])}
-        for dtype, folder in (('APP_IPHONE_67', 'phone'), ('APP_IPAD_PRO_3GEN_129', 'ipad')):
+        for dtype, folder in ([] if os.environ.get('SKIP_SHOTS') else  (('APP_IPHONE_67', 'phone'), ('APP_IPAD_PRO_3GEN_129', 'ipad'))):
             files = sorted(glob.glob(os.path.join(HERE, 'shots', folder, '*.png')))
             if not files: continue
             sid = sets.get(dtype)
@@ -130,6 +131,8 @@ if vid:
                 s7, d7 = call('PATCH', f"/v1/appScreenshots/{shot['id']}", {'data': {'type': 'appScreenshots', 'id': shot['id'], 'attributes': {'uploaded': True, 'sourceFileChecksum': hashlib.md5(data).hexdigest()}}})
                 log('screenshot', dtype, os.path.basename(f), s7, d7 if s7 >= 300 else '')
 
+if os.environ.get('SKIP_SHOTS'):
+    log('DONE'); sys.exit(0)
 # ---------- price: free
 s, d = call('GET', f'/v1/apps/{APP}/appPricePoints?filter[territory]=USA&limit=200')
 free = None

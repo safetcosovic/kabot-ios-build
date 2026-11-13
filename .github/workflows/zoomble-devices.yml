@@ -37,7 +37,10 @@ jobs:
               s2, d2 = call('POST', '/v1/devices', {'data': {'type': 'devices', 'attributes': {'name': 'Safet iPhone', 'platform': 'IOS', 'udid': udid}}})
               print('POST device', s2, d2 if s2 != 201 else 'registered')
           s3, d3 = call('GET', '/v1/bundleIds?filter[identifier]=com.zoomble.Zoomble')
-          print('bundleId lookup', s3, len(d3['data']) if s3 == 200 else d3)
+          print('bundleId lookup', s3, [x['attributes']['identifier'] for x in d3['data']] if s3 == 200 else d3)
+          if s3 == 200 and not any(x['attributes']['identifier'] == 'com.zoomble.Zoomble' for x in d3['data']):
+              s4, d4 = call('POST', '/v1/bundleIds', {'data': {'type': 'bundleIds', 'attributes': {'identifier': 'com.zoomble.Zoomble', 'name': 'ZOOMBLE', 'platform': 'IOS'}}})
+              print('POST bundleId', s4, d4 if s4 != 201 else 'registered ' + d4['data']['id'])
           PY
       - name: Publish log
         if: always()

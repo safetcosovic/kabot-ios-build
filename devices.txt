@@ -1,0 +1,45 @@
+
+===== Knotsy: Ring Unlock Puzzle knotsy-iphone.mp4 1868123
+ already attached
+
+===== Unarrow: Tap Away Arrow Puzzle unarrow-iphone.mp4 3263940
+ removed old unarrow-review.mp4 204
+ commit 200 
+ state COMPLETE
+
+===== Truckzy: Truck Parking Puzzle truckzy-iphone.mp4 3804000
+ removed old truckzy-review.mp4 204
+ commit 200 
+ state COMPLETE
+DONE
+
+===== ZOOMBLE Kart Royale
+ version 1.0.0 PREPARE_FOR_SUBMISSION
+ notes chars 429 | mentions recording: False | demoRequired False
+ notes start: ZOOMBLE is an offline kart racing game; no account or sign-in is needed. Rivals are computer-controlled (the "Finding racers" screen fills the lobby with AI rac
+ attachments: NONE
+
+===== Knotsy: Ring Unlock Puzzle
+ version 1.0.0 WAITING_FOR_REVIEW
+ notes chars 2424 | mentions recording: True | demoRequired False
+ notes start: UPDATE - recording on a physical iPhone, TestFlight build 9: https://safetcosovic.github.io/unarrow-privacy/review/knotsy-iphone.mp4  1. Screen recording: https
+ attachment knotsy-iphone.mp4 1868123 COMPLETE
+
+===== Unarrow: Tap Away Arrow Puzzle
+ version 2.1.2 WAITING_FOR_REVIEW
+ notes chars 2479 | mentions recording: True | demoRequired False
+ notes start: UPDATE - recording on a physical iPhone, TestFlight build 10: https://safetcosovic.github.io/unarrow-privacy/review/unarrow-iphone.mp4  1. Screen recording: htt
+ attachment unarrow-iphone.mp4 3263940 COMPLETE
+
+===== Kabot: Robot Smash Shooter
+ version 1.3.0 WAITING_FOR_REVIEW
+ notes chars 1827 | mentions recording: True | demoRequired False
+ notes start: No account or login needed. The game is fully playable offline. Ads are served by Google AdMob; on first launch the app shows the Google consent form (EEA/UK/US
+ attachments: NONE
+
+===== Truckzy: Truck Parking Puzzle
+ version 1.0.0 WAITING_FOR_REVIEW
+ notes chars 2116 | mentions recording: True | demoRequired False
+ notes start: UPDATE - recording on a physical iPhone, TestFlight build 8: https://safetcosovic.github.io/unarrow-privacy/review/truckzy-iphone.mp4  No account or login neede
+ attachment truckzy-iphone.mp4 3804000 COMPLETE
+DONE

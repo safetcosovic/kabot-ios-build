@@ -21,6 +21,8 @@ for a in apps['data']:
     rid=d['data']['id']
     s,att=call('GET',f"/v1/appStoreReviewDetails/{rid}/appStoreReviewAttachments")
     if any(t['attributes'].get('fileName')==f for t in att.get('data',[])): print(' already attached'); continue
+    for t in att.get('data',[]):
+        ds,dd=call('DELETE',f"/v1/appStoreReviewAttachments/{t['id']}"); print(' removed old',t['attributes'].get('fileName'),ds)
     s,r=call('POST','/v1/appStoreReviewAttachments',{'data':{'type':'appStoreReviewAttachments','attributes':{'fileName':f,'fileSize':len(data)},'relationships':{'appStoreReviewDetail':{'data':{'type':'appStoreReviewDetails','id':rid}}}}})
     if s>=300: print(' reserve',s,r); continue
     at=r['data']

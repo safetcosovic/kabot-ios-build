@@ -16,7 +16,7 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
         run: |
           pip install --quiet pyjwt cryptography
-          python3 zoomble/asc_review_detail.py 2>&1 | tee /tmp/devices.txt
+          mkdir -p /tmp/vids && for f in knotsy-iphone truckzy-iphone unarrow-iphone; do curl -fsSL -o /tmp/vids/$f.mp4 https://safetcosovic.github.io/unarrow-privacy/review/$f.mp4; done && ls -la /tmp/vids && python3 zoomble/asc_attach_videos.py && python3 zoomble/asc_review_detail.py 2>&1 | tee /tmp/devices.txt
       - name: Publish log
         if: always()
         run: |

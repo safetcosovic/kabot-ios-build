@@ -1,0 +1,4 @@
+unsigned Capacitor.framework
+unsigned Cordova.framework
+unsigned GoogleMobileAds.framework
+unsigned UserMessagingPlatform.framework

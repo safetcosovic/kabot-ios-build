@@ -1,0 +1,70 @@
+
+===== ZOOMBLE Kart Royale com.zoomble.Zoomble
+ version 1.0.0 PREPARE_FOR_SUBMISSION created 2026-11-12T23:15
+ build 58902052.0.3 VALID 2026-11-28T03:33 
+ build 202611131145 VALID 2026-11-13T02:48 
+ build 202611131125 VALID 2026-11-13T02:29 
+
+===== Truckzy: Truck Parking Jam com.truckzy.cargo
+ version 1.0.1 PREPARE_FOR_SUBMISSION created 2026-11-24T01:58
+ version 1.0.0 READY_FOR_DISTRIBUTION created 2026-11-06T02:18
+ submission COMPLETE submitted 2026-11-14T15:04 platform IOS
+   item APPROVED
+ submission COMPLETE submitted 2026-11-06T20:40 platform IOS
+   item REMOVED
+ build 8 VALID 2026-11-06T03:36 
+
+===== Knotsy: Ring Unlock Puzzle com.knotsy.rings
+ version 1.0.1 PREPARE_FOR_SUBMISSION created 2026-11-24T01:57
+ version 1.0.0 READY_FOR_DISTRIBUTION created 2026-11-06T02:20
+ submission COMPLETE submitted 2026-11-14T15:00 platform IOS
+   item APPROVED
+ submission COMPLETE submitted 2026-11-06T20:56 platform IOS
+   item REMOVED
+ build 9 VALID 2026-11-06T03:42 
+
+===== Unarrow: Tap Away Arrow Puzzle com.unarrow.puzzle
+ version 2.2.0 PREPARE_FOR_SUBMISSION created 2026-11-24T01:54
+ version 2.1.2 READY_FOR_DISTRIBUTION created 2026-11-06T02:22
+ submission COMPLETE submitted 2026-11-14T15:02 platform IOS
+   item APPROVED
+ submission COMPLETE submitted 2026-11-06T20:48 platform IOS
+   item REMOVED
+ build 10 VALID 2026-11-06T03:39 
+
+===== Kabot: Robot Smash Shooter com.kabot.smash
+ version 1.3.0 WAITING_FOR_REVIEW created 2026-11-08T12:56
+ submission WAITING_FOR_REVIEW submitted 2026-11-23T23:24 platform IOS
+   item READY_FOR_REVIEW
+ build 7 VALID 2026-11-23T14:38 
+ build 4 VALID 2026-11-08T13:56 
+DONE
+
+===== ZOOMBLE readiness (read-only)
+ contentRights DOES_NOT_USE_THIRD_PARTY_CONTENT | primaryLocale en-US
+ appInfo PREPARE_FOR_SUBMISSION | ageRating NINE_PLUS
+  primaryCategory GAMES
+  info loc en-US name 19 subtitle 26 privacyUrl True
+  info loc tr name 19 subtitle 29 privacyUrl True
+  info loc pt-BR name 19 subtitle 28 privacyUrl True
+  info loc es-MX name 19 subtitle 30 privacyUrl True
+  info loc id name 19 subtitle 25 privacyUrl True
+  age rating set: {'advertising': True, 'violenceCartoonOrFantasy': 'INFREQUENT_OR_MILD'}
+  age rating UNSET fields: []
+ version 1.0.0 PREPARE_FOR_SUBMISSION | copyright True | releaseType MANUAL
+  attached build 58902052.0.3 VALID | usesNonExemptEncryption False
+  newest build encryption flag False | expired False
+  loc en-US desc 1262 kw 95 promo 116 support True
+   shots APP_IPAD_PRO_3GEN_129 6
+   shots APP_IPHONE_67 7
+  loc id desc 1712 kw 90 promo 123 support True
+  loc tr desc 1681 kw 89 promo 126 support True
+  loc es-MX desc 1696 kw 93 promo 141 support True
+  loc pt-BR desc 1589 kw 93 promo 142 support True
+  review detail present fields {'contactFirstName': True, 'contactLastName': True, 'contactPhone': True, 'contactEmail': True, 'notes': True} | demoRequired False
+ availability 200
+ price schedule 200
+
+ MISSING: nothing found by API
+ NOTE: App Privacy labels (data collection) are not readable via API - check in App Store Connect web.
+DONE
